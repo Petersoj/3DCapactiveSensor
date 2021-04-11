@@ -1,3 +1,11 @@
+# General
 .DS_Store
+
+# KiCad
 fp-info-cache
 *-cache.lib
+
+# Visual Studio
+client/obj/
+client/.vs/
+client/bin/
