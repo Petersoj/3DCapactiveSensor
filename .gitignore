@@ -9,3 +9,8 @@ fp-info-cache
 client/obj/
 client/.vs/
 client/bin/
+
+# uVision
+mcu/MDK-ARM/DebugConfig/
+*.uvoptx
+*.uvguix.*
