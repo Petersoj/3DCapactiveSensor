@@ -54,6 +54,27 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void usart3_transmit_char(char character) {
+	// Busy wait while TX register is not empty
+	while (((USART3->ISR >> 7u) & 0x1u) == 0) { }
+	// Write 'character' to Transmit Data Register
+	USART3->TDR = character;
+}
+
+void usart3_transmit_string(char string[]) {
+	uint32_t index = 0;
+	char character;
+	// Transmit char until 0 is reached
+	while ((character = string[index++]) != 0x0u) {
+		usart3_transmit_char(character);
+	}
+}
+
+void usart3_transmit_newline() {
+	usart3_transmit_char('\n'); // Line Feed/New Line
+  usart3_transmit_char('\r'); // Carrage return
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -84,13 +105,44 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
+	
+	// STM32 TX/USB-UART RX is on PC4
+	// STM32 RX/USB-UART TX is on PC5
+	
+	// Enable GPIOC clock
+	RCC->AHBENR |= (1 << 19u);
+	// Enable the USART clock
+	RCC->APB1ENR |= (1 << 18u);
+	
+	// Configure PC4 for USART3 Alternate Function
+	GPIOC->MODER |= (1 << 9u);
+	GPIOC->MODER &= ~(1 << 8u);
+	// Configure PC5 for USART3 Alternate Function
+	GPIOC->MODER |= (1 << 11u);
+	GPIOC->MODER &= ~(1 << 10u);
+	// Configure PC4 Alternate Function (AF) Low Register for AF1
+	GPIOC->AFR[0] |= (1 << 16u);
+	// Configure PC5 Alternate Function (AF) Low Register for AF1
+	GPIOC->AFR[0] |= (1 << 20u);
+	
+	// Set the baud rate of USART3
+	USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
+	// Enable USART3 TX
+	USART3->CR1 |= (1 << 3u);
+	// Enable USART3 RX
+	USART3->CR1 |= (1 << 2u);
+	// Enable USART3 Receive Register Not Empty Interrupt
+	USART3->CR1 |= (1 << 5u);
+	// Enable USART3
+	USART3->CR1 |= (1 << 0u);
+	
+	usart3_transmit_string("Testing...");
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

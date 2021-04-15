@@ -14,3 +14,12 @@ client/bin/
 mcu/MDK-ARM/DebugConfig/
 *.uvoptx
 *.uvguix.*
+*.o
+*.d
+*.axf
+*.build_log.*
+*.hex
+*.htm
+*.lnp
+*.dep
+*.lst
