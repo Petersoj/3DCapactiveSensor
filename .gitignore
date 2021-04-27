@@ -13,6 +13,7 @@ client/**/bin/
 
 # uVision
 mcu/MDK-ARM/DebugConfig/
+mcu/MDK-ARM/3DCapacitiveSensor/
 *.uvoptx
 *.uvguix.*
 *.o

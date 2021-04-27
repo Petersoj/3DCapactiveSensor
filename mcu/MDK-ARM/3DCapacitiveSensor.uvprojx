@@ -411,6 +411,19 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Drivers/CMSIS</GroupName>
+          <Files>
+            <File>
+              <FileName>system_stm32f0xx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/system_stm32f0xx.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>::CMSIS</GroupName>
+        </Group>
+        <Group>
           <GroupName>Drivers/STM32F0xx_HAL_Driver</GroupName>
           <Files>
             <File>
@@ -489,19 +502,6 @@
               <FilePath>../Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_exti.c</FilePath>
             </File>
           </Files>
-        </Group>
-        <Group>
-          <GroupName>Drivers/CMSIS</GroupName>
-          <Files>
-            <File>
-              <FileName>system_stm32f0xx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Core/Src/system_stm32f0xx.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
     </Target>
