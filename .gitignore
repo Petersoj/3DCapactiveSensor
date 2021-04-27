@@ -6,9 +6,10 @@ fp-info-cache
 *-cache.lib
 
 # Visual Studio
-client/obj/
-client/.vs/
-client/bin/
+*.csproj.user
+client/**/obj/
+client/**/.vs/
+client/**/bin/
 
 # uVision
 mcu/MDK-ARM/DebugConfig/

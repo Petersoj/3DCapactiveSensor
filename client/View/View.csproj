@@ -1,14 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net5.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
-    <StartupObject>Client3DCapacitiveSensor.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Ports" Version="5.0.1" />
+    <ProjectReference Include="..\Controller\Controller.csproj" />
   </ItemGroup>
 
 </Project>

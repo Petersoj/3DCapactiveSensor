@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client3DCapacitiveSensor", "Client3DCapacitiveSensor.csproj", "{7AF77F36-C41E-4C3C-9E27-00EA5C0D0889}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "View", "View\View.csproj", "{1FD30E38-7A9B-4799-BB24-3519C3F564E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Controller", "Controller\Controller.csproj", "{DBCD3266-FAB9-43C2-89A5-FD08BDDA76DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +13,19 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7AF77F36-C41E-4C3C-9E27-00EA5C0D0889}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7AF77F36-C41E-4C3C-9E27-00EA5C0D0889}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7AF77F36-C41E-4C3C-9E27-00EA5C0D0889}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7AF77F36-C41E-4C3C-9E27-00EA5C0D0889}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FD30E38-7A9B-4799-BB24-3519C3F564E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FD30E38-7A9B-4799-BB24-3519C3F564E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FD30E38-7A9B-4799-BB24-3519C3F564E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FD30E38-7A9B-4799-BB24-3519C3F564E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBCD3266-FAB9-43C2-89A5-FD08BDDA76DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBCD3266-FAB9-43C2-89A5-FD08BDDA76DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBCD3266-FAB9-43C2-89A5-FD08BDDA76DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBCD3266-FAB9-43C2-89A5-FD08BDDA76DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {2D8A4D92-59F2-478F-AAA3-A574C55A4B25}
+		SolutionGuid = {DD9A37DF-5560-43B5-91F4-8EBB14803BF8}
 	EndGlobalSection
 EndGlobal
