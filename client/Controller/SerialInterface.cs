@@ -61,6 +61,16 @@ namespace Client3DCapacitiveSensor.Controller {
         }
 
         /// <summary>
+        /// Closes the serial interface connection.
+        /// </summary>
+        /// <exception cref="System.IO.IOException">Thrown for <see cref="System.IO.IOException"/>s</exception>
+        public void Stop() {
+            if (serialPort.IsOpen) {
+                serialPort.Close();
+            }
+        }
+
+        /// <summary>
         /// Reads a line (a string ending with '\n' (LF)) from the <see cref="SerialPort"/>.
         /// </summary>
         /// <returns>The line read from the <see cref="SerialPort"/></returns>

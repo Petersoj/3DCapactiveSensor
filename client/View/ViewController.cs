@@ -46,7 +46,7 @@ namespace Client3DCapacitiveSensor.View {
 
             isErrorShown = true;
             initialForm.Invoke(new Action(() => {
-                MessageBox.Show("Error!", message, MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
+                MessageBox.Show(message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
                 isErrorShown = false;
             }));
             return true;

@@ -16,6 +16,7 @@ namespace Client3DCapacitiveSensor.View {
         private readonly int minScreenY;
         private readonly int screenWidth;
         private readonly int screenHeight;
+        private bool leftButtonDown;
 
         /// <summary>
         /// Instantiates a new <see cref="CursorController"/>
@@ -31,6 +32,8 @@ namespace Client3DCapacitiveSensor.View {
             minScreenY = primaryScreenBounds.Y;
             screenWidth = primaryScreenBounds.Width;
             screenHeight = primaryScreenBounds.Height;
+
+            leftButtonDown = false;
         }
 
         /// <summary>
@@ -49,6 +52,7 @@ namespace Client3DCapacitiveSensor.View {
         /// </summary>
         public void LeftButtonDown() {
             mouse_event((int)MouseEventFlags.LeftDown, GetX(), GetY(), 0, 0);
+            leftButtonDown = true;
         }
 
         /// <summary>
@@ -56,6 +60,7 @@ namespace Client3DCapacitiveSensor.View {
         /// </summary>
         public void LeftButtonUp() {
             mouse_event((int)MouseEventFlags.LeftUp, GetX() + 100, GetY() + 100, 0, 0);
+            leftButtonDown = false;
         }
 
         /// <summary>
@@ -70,19 +75,27 @@ namespace Client3DCapacitiveSensor.View {
         private static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
 
         /// <summary>
-        /// Gets the X value of the cursor.
+        /// Gets <see cref="Cursor.Position.X"/>.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><see cref="Cursor.Position.X"/></returns>
         public int GetX() {
             return Cursor.Position.X;
         }
 
         /// <summary>
-        /// Gets the Y value of the cursor.
+        /// Gets <see cref="Cursor.Position.Y"/>.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><see cref="Cursor.Position.Y"/></returns>
         public int GetY() {
             return Cursor.Position.Y;
+        }
+
+        /// <summary>
+        /// True if <see cref="leftButtonDown"/>.
+        /// </summary>
+        /// <returns><see cref="leftButtonDown"/></returns>
+        public bool IsLeftButtonDown() {
+            return leftButtonDown;
         }
 
         /// <summary>
