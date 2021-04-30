@@ -1,24 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO.Ports;
 using System.Windows.Forms;
-using System.Threading;
 using Controller;
 
 namespace Client3DCapacitiveSensorView {
 
+    /// <summary>
+    /// <see cref="InitialForm"/> is the <see cref="Form"/> that prompts the user for data at the 
+    /// start of the program.
+    /// </summary>
     public partial class InitialForm : Form {
 
-        private readonly MainController mainController;
+        private readonly SerialInterface mainController;
 
         public InitialForm() {
-            mainController = new MainController();
+            
         }
 
         public void Start() {
@@ -26,7 +21,7 @@ namespace Client3DCapacitiveSensorView {
         }
 
         private void StartButtonClick(object sender, EventArgs eventArgs) {
-            mainController.ReadAsync(comPortNumberTextBox.Text);
+            
         }
     }
 }
