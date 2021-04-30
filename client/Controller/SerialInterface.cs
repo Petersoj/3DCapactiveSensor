@@ -31,7 +31,6 @@ namespace Client3DCapacitiveSensor.Controller {
 
         private readonly SerialPort serialPort;
 
-
         /// <summary>
         /// Instantiates a new <see cref="SerialInterface"/>.
         /// </summary>
@@ -50,7 +49,7 @@ namespace Client3DCapacitiveSensor.Controller {
             // Create and configure 'serialPort'
             serialPort = new SerialPort("COM" + COMPortNumber, BaudRate, Parity, DataBits, StopBits);
             serialPort.NewLine = "\n";
-            serialPort.ReadTimeout = 1000; // Timeout on read after not seeing data for 1 second.
+            serialPort.ReadTimeout = 5 * 60 * 1000; // Timeout on read after not seeing data for 5 minutes.
         }
 
         /// <summary>
