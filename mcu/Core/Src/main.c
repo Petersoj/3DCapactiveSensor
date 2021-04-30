@@ -182,6 +182,27 @@ void SystemClock_Config(void) {
 
 /* USER CODE BEGIN 4 */
 
+static inline void set_bits(volatile uint32_t *to_set, uint32_t number, uint8_t msb, uint8_t lsb) {
+    uint32_t temp = *to_set;
+    uint32_t mask = (~0u << (msb + 1)) | ~(~0u << lsb);
+    temp |= ~mask & (number << lsb);
+    temp &= mask | (number << lsb);
+    *to_set = temp;
+}
+
+static inline void set_bit(volatile uint32_t *to_set, uint32_t bit, uint8_t index) {
+    set_bits(to_set, bit, index, index);
+}
+
+static inline uint32_t get_bits(volatile uint32_t *to_get, uint8_t msb, uint8_t lsb) {
+    uint32_t mask = ~((~0u << (msb + 1)) | ~(~0u << lsb));
+    return (*to_get & mask) >> lsb;
+}
+
+static inline uint32_t get_bit(volatile uint32_t *to_get, uint8_t index) {
+    return get_bits(to_get, index, index);
+}
+
 /* USER CODE END 4 */
 
 /**

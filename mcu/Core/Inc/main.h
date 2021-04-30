@@ -55,6 +55,46 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
+/**
+ * @brief  Sets 'number' inside 'to_set' at the bits defined by MSB and LSB
+ * @param  to_set: a pointer to the bits to set
+ * @param  number: the number to set inside 'to_set'
+ * @param  msb: the MSB (0 - 31) (inclusive)
+ * @param  lsb: the LSB (0 - 31) (inclusive)
+ * @retval None
+ * @author Jacob Peterson
+ */
+static inline void set_bits(volatile uint32_t *to_set, uint32_t number, uint8_t msb, uint8_t lsb);
+
+/**
+ * @brief  Sets 'bit' inside 'to_set' at index
+ * @param  to_set: a pointer to the bits to set
+ * @param  bit: the bit to set inside 'to_set'
+ * @param  index: the index (0 - 31) (inclusive)
+ * @retval None
+ * @author Jacob Peterson
+ */
+static inline void set_bit(volatile uint32_t *to_set, uint32_t bit, uint8_t index);
+
+/**
+ * @brief  Gets the bits inside 'to_get' at the bits defined by MSB and LSB
+ * @param  to_get: a pointer to the bits to get
+ * @param  msb: the MSB (0 - 31) (inclusive)
+ * @param  lsb: the LSB (0 - 31) (inclusive)
+ * @retval None
+ * @author Jacob Peterson
+ */
+static inline uint32_t get_bits(volatile uint32_t *to_get, uint8_t msb, uint8_t lsb);
+
+/**
+ * @brief  Gets the bit inside 'to_get' at the bits at the index
+ * @param  to_get: a pointer to the bits to get
+ * @param  index: the MSB (0 - 31)
+ * @retval None
+ * @author Jacob Peterson
+ */
+static inline uint32_t get_bit(volatile uint32_t *to_get, uint8_t index);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
