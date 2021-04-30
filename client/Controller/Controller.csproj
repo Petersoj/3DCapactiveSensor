@@ -1,11 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.IO.Ports" Version="5.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\View\View.csproj" />
   </ItemGroup>
 
 </Project>

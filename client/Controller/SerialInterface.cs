@@ -1,8 +1,7 @@
 ﻿using System;
 using System.IO.Ports;
-using System.Threading;
 
-namespace Controller {
+namespace Client3DCapacitiveSensor.Controller {
 
     /// <summary>
     /// This class is for easy interfacing with an <see cref="SerialPort"/> asynchronously.
@@ -30,7 +29,7 @@ namespace Controller {
         /// </summary>
         public StopBits StopBits { get; private set; }
 
-        private SerialPort serialPort;
+        private readonly SerialPort serialPort;
 
 
         /// <summary>
@@ -47,6 +46,11 @@ namespace Controller {
             Parity = parity;
             DataBits = dataBits;
             StopBits = stopBits;
+
+            // Create and configure 'serialPort'
+            serialPort = new SerialPort("COM" + COMPortNumber, BaudRate, Parity, DataBits, StopBits);
+            serialPort.NewLine = "\n";
+            serialPort.ReadTimeout = 1000; // Timeout on read after not seeing data for 1 second.
         }
 
         /// <summary>
@@ -54,9 +58,6 @@ namespace Controller {
         /// </summary>
         /// <exception cref="Exception">Thrown for a variety of exceptions.</exception>
         public void Start() {
-            serialPort = new SerialPort("COM" + COMPortNumber, BaudRate, Parity, DataBits, StopBits);
-            serialPort.NewLine = "\n";
-            serialPort.ReadTimeout = 1000; // Timeout on read after not seeing data for 1 second.
             serialPort.Open();
         }
 
