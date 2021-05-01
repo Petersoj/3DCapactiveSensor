@@ -96,6 +96,13 @@ int main(void) {
 
     configure_rcc();
     configure_usart3_tx();
+    uint8_t channels[5] = {6, 5, 4, 7, 8};
+    configure_and_setup_adc(channels, sizeof(channels) / sizeof(uint8_t));
+    gpio_configure_adc_function(GPIOA, 5);
+    gpio_configure_adc_function(GPIOA, 6);
+    gpio_configure_adc_function(GPIOA, 4);
+    gpio_configure_adc_function(GPIOA, 7);
+    gpio_configure_adc_function(GPIOA, 8);
 
     /* USER CODE END 2 */
 
@@ -103,6 +110,20 @@ int main(void) {
     /* USER CODE BEGIN WHILE */
     while (1) {
         /* USER CODE END WHILE */
+
+        // Testing code for ADC sample sequence
+        uint16_t channel_data[5] = {0, 0};
+        gpio_start_adc_sample_sequence(channel_data, sizeof(channel_data) / sizeof(uint16_t));
+        int index;
+        for (index = 0; index < sizeof(channel_data) / sizeof(uint16_t); index++) {
+            char buffer[10];
+            usart3_transmit_newline(CRLF);
+            to_string(channel_data[index], buffer, 10);
+            usart3_transmit_string(buffer);
+            usart3_transmit_char(',');
+        }
+        usart3_transmit_newline(CRLF);
+        HAL_Delay(1000);
 
         /* USER CODE BEGIN 3 */
     }
@@ -146,19 +167,27 @@ void configure_rcc(void) {
     set_bit(&RCC->AHBENR, 1, RCC_AHBENR_GPIOAEN_Pos);
     // Enable GPIOC clock
     set_bit(&RCC->AHBENR, 1, RCC_AHBENR_GPIOCEN_Pos);
-    // Enable the USART3 RCC clock
+    // Enable the USART3 clock
     set_bit(&RCC->APB1ENR, 1, RCC_APB1ENR_USART3EN_Pos);
+    // Enable ADC clock
+    set_bit(&RCC->APB2ENR, 1, RCC_APB2ENR_ADCEN_Pos);
 }
 
 void configure_and_setup_adc(uint8_t *channel_select_positions,
                              uint8_t channel_select_positions_length) {
     // Configure ADC
+    // Ensure ADC ready is 0
+    if (get_bit(&ADC1->ISR, ADC_ISR_ADRDY_Pos) != 0) {
+        set_bit(&ADC1->ISR, 1, ADC_ISR_ADRDY_Pos); // Clears ADRDY
+    }
     // 0x0 = 12-bit resolution
     set_bits(&ADC1->CFGR1, 0x0, ADC_CFGR1_RES_Pos + 1, ADC_CFGR1_RES_Pos);
     // Single conversion mode (converts selected channels upon request)
     set_bit(&ADC1->CFGR1, 0, ADC_CFGR1_CONT_Pos);
     // Disable hardware trigger
     set_bits(&ADC1->CFGR1, 0, ADC_CFGR1_EXTEN_Pos + 1, ADC_CFGR1_EXTEN_Pos);
+    // Disable DMA
+    set_bit(&ADC1->CFGR1, 0, ADC_CFGR1_DMAEN_Pos);
     // Enable Wait mode (delays until EOS flag is cleared)
     set_bit(&ADC1->CFGR1, 1, ADC_CFGR1_WAIT_Pos);
 
@@ -220,31 +249,28 @@ void gpio_configure_adc_function(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number
 
 // See Example 13.5.5 in Pheripheral Reference Manual for a good example timing diagram of
 // conversion sequence.
-void gpio_start_adc_sample_sequence(uint8_t *channel_select_data,
+void gpio_start_adc_sample_sequence(uint16_t *channel_select_data,
                                     uint8_t channel_select_data_length) {
-    // Wait for ADC ready
-    while (get_bit(&ADC1->ISR, ADC_ISR_ADRDY_Pos) == 0) {
+    // Ensure ADC ready is 0
+    if (get_bit(&ADC1->ISR, ADC_ISR_ADRDY_Pos) != 0) {
+        set_bit(&ADC1->ISR, 1, ADC_ISR_ADRDY_Pos); // Clears ADRDY
     }
 
     // Start ADC conversion sequence
     set_bit(&ADC1->CR, 1, ADC_CR_ADSTART_Pos);
 
     int channel_index = 0;
-    while (channel_index < channel_select_data_length) {
+    while (get_bit(&ADC1->ISR, ADC_ISR_EOS_Pos) == 0) {
         // Busy wait for End Of Conversion for current channel
         while (get_bit(&ADC1->ISR, ADC_ISR_EOC_Pos) == 0) {
         }
-        // Clear EOC flag
-        set_bit(&ADC1->ISR, 0, ADC_ISR_EOC_Pos);
-        // Set data in array
+
+        // Set data in array (also will clear the EOC flag)
         channel_select_data[channel_index++] = ADC1->DR;
     }
 
-    // Busy wait for End Of Sequence
-    while (get_bit(&ADC1->ISR, ADC_ISR_EOS_Pos) == 0) {
-    }
     // Clear EOS flag
-    set_bit(&ADC1->ISR, 0, ADC_ISR_EOS_Pos);
+    set_bit(&ADC1->ISR, 1, ADC_ISR_EOS_Pos);
 }
 
 void usart3_transmit_char(char character) {

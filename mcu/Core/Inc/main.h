@@ -106,7 +106,7 @@ void gpio_configure_adc_function(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number
  * @param channel_select_data: an array to be filled by select channel data
  * @param channel_select_data_length: length of channel_select_data
  */
-void gpio_start_adc_sample_sequence(uint8_t *channel_select_data,
+void gpio_start_adc_sample_sequence(uint16_t *channel_select_data,
                                     uint8_t channel_select_data_length);
 
 /**
