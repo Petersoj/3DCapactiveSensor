@@ -43,6 +43,20 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
+/**
+ * @brief Represents a type of line ending.
+ */
+enum LineEnding {
+    /** @brief '\r' */
+    CR,
+
+    /** @brief '\n' */
+    LF,
+
+    /** @brief '\r\n' */
+    CRLF
+};
+
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -56,17 +70,54 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 
 /**
- * @brief  Configures USART3 peripheral.
- * @retval None
+ * @brief Configures the RCC.
  */
-void configure_usart3();
+void configure_rcc(void);
+
+/**
+ * @brief Configures the USART3 peripheral for transmission.
+ */
+void configure_usart3_tx(void);
+
+/**
+ * @brief Pulls a GPIO pin low.
+ * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
+ * @param gpio_number: the GPIO port number
+ */
+void gpio_pull_low(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
+
+/**
+ * @brief Configures a GPIO pin to interally connect to its ADC channel.
+ * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
+ * @param gpio_number: the GPIO port number
+ */
+void gpio_configure_adc_function(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
+
+/**
+ * @brief Transmits a character on the USART3 peripheral. This is a blocking call.
+ * @param character: the character
+ */
+void usart3_transmit_char(char character);
+
+/**
+ * @brief Transmits a string on the USART3 peripheral. This is a blocking call.
+ * @param string: the string
+ */
+void usart3_transmit_string(char string[]);
+
+/**
+ * @brief Transmits a new line on the USART3 peripheral.
+ * @param lineEnding: the type of line ending
+ */
+void usart3_transmit_newline(enum LineEnding lineEnding);
 
 /**
  * @brief C++ version 0.4 char* style "itoa":
  * Written by Lukas Chmela (https://stackoverflow.com/a/23840699)
  * Released under GPLv3.
+ * @retval the converted ASCII character
  */
-char *itoa(int value, char *result, int base);
+char *to_string(int value, char *result, int base);
 
 /**
  * @brief  Sets 'number' inside 'to_set' at the bits defined by MSB and LSB.
@@ -74,7 +125,6 @@ char *itoa(int value, char *result, int base);
  * @param  number: the number to set inside 'to_set'
  * @param  msb: the MSB (0 - 31) (inclusive)
  * @param  lsb: the LSB (0 - 31) (inclusive)
- * @retval None
  * @author Jacob Peterson
  */
 static inline void set_bits(volatile uint32_t *to_set, uint32_t number, uint8_t msb, uint8_t lsb);
@@ -84,7 +134,6 @@ static inline void set_bits(volatile uint32_t *to_set, uint32_t number, uint8_t 
  * @param  to_set: a pointer to the bits to set
  * @param  bit: the bit to set inside 'to_set'
  * @param  index: the index (0 - 31) (inclusive)
- * @retval None
  * @author Jacob Peterson
  */
 static inline void set_bit(volatile uint32_t *to_set, uint32_t bit, uint8_t index);

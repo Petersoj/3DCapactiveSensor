@@ -56,28 +56,6 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void usart3_transmit_char(char character) {
-    // Busy wait while TX register is not empty
-    while (((USART3->ISR >> 7u) & 0x1u) == 0) {
-    }
-    // Write 'character' to Transmit Data Register
-    USART3->TDR = character;
-}
-
-void usart3_transmit_string(char string[]) {
-    uint32_t index = 0;
-    char character;
-    // Transmit char until 0 is reached
-    while ((character = string[index++]) != 0x0u) {
-        usart3_transmit_char(character);
-    }
-}
-
-void usart3_transmit_newline() {
-    usart3_transmit_char('\n'); // Line Feed/New Line
-    usart3_transmit_char('\r'); // Carrage return
-}
-
 /* USER CODE END 0 */
 
 /**
@@ -116,11 +94,8 @@ int main(void) {
     // PC4 = STM32 TX / USB-UART RX
     // PC5 = STM32 RX / USB-UART TX
 
-    // Enable GPIOC clock
-
-    RCC->AHBENR |= (1 << 19u);
-
-    usart3_transmit_string("Testing...");
+    configure_rcc();
+    configure_usart3_tx();
 
     /* USER CODE END 2 */
 
@@ -166,10 +141,45 @@ void SystemClock_Config(void) {
 
 /* USER CODE BEGIN 4 */
 
-void configure_usart3() {
+void configure_rcc(void) {
+    // Enable GPIOA clock
+    set_bit(&RCC->AHBENR, 1, RCC_AHBENR_GPIOAEN_Pos);
+    // Enable GPIOC clock
+    set_bit(&RCC->AHBENR, 1, RCC_AHBENR_GPIOCEN_Pos);
     // Enable the USART3 RCC clock
     set_bit(&RCC->APB1ENR, 1, RCC_APB1ENR_USART3EN_Pos);
+}
 
+void configure_and_setup_adc(uint8_t *channel_select_positions,
+                             uint8_t channel_select_positions_length) {
+    // Configure ADC
+    // 0x0 = 12-bit resolution
+    set_bits(&ADC1->CFGR1, 0x0, ADC_CFGR1_RES_Pos + 1, ADC_CFGR1_RES_Pos);
+    // Single conversion mode (converts selected channels upon request)
+    set_bit(&ADC1->CFGR1, 0, ADC_CFGR1_CONT_Pos);
+    // Disable hardware trigger
+    set_bits(&ADC1->CFGR1, 0, ADC_CFGR1_EXTEN_Pos + 1, ADC_CFGR1_EXTEN_Pos);
+
+    // Loop through and enable select channels
+    int index;
+    for (index = 0; index < channel_select_positions_length; index++) {
+        set_bit(&ADC1->CHSELR, 1, channel_select_positions[index]);
+    }
+
+    // Calibrate ADC
+    set_bit(&ADC1->CR, 1, ADC_CR_ADCAL_Pos);
+    // Wait for calibration to finish
+    while (get_bit(&ADC1->CR, ADC_CR_ADCAL_Pos)) {
+    }
+
+    // Enable ADC
+    set_bit(&ADC1->CR, 1, ADC_CR_ADEN_Pos);
+    // Wait for ADC ready
+    while (get_bit(&ADC1->ISR, ADC_ISR_ADRDY_Pos) == 0) {
+    }
+}
+
+void configure_usart3_tx(void) {
     // Configure PC4 for USART3 Alternate Function
     set_bits(&GPIOC->MODER, 0x2, GPIO_MODER_MODER4_Pos + 1, GPIO_MODER_MODER4_Pos);
     // Configure PC5 for USART3 Alternate Function
@@ -188,7 +198,87 @@ void configure_usart3() {
     set_bit(&USART3->CR1, 1, USART_CR1_UE_Pos);
 }
 
-char *itoa(int value, char *result, int base) {
+void gpio_pull_low(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
+    // General purpose output mode
+    set_bits(&gpio_pointer->MODER, 0x1, gpio_number * 2 + 1, gpio_number * 2);
+    // Push-pull output type
+    set_bit(&gpio_pointer->MODER, 0x0, gpio_number);
+    // High output speed
+    set_bits(&gpio_pointer->OSPEEDR, 0x3, gpio_number * 2 + 1, gpio_number * 2); // 0x3 = 0b11
+    // No pull-up, no pull-down resistors
+    set_bits(&gpio_pointer->PUPDR, 0x0, gpio_number * 2 + 1, gpio_number * 2);
+}
+
+void gpio_configure_adc_function(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
+    // Analog mode
+    set_bits(&gpio_pointer->MODER, 0x3, gpio_number * 2 + 1, gpio_number * 2); // 0x3 = 0b11
+    // No pull-up, no pull-down resistors
+    set_bits(&gpio_pointer->PUPDR, 0x0, gpio_number * 2 + 1, gpio_number * 2);
+}
+
+// See Example 13.5.5 in Pheripheral Reference Manual for a good example timing diagram of
+// conversion sequence.
+void gpio_start_adc_sample_sequence(uint8_t *channel_select_data,
+                                    uint8_t channel_select_data_length) {
+    // Wait for ADC ready
+    while (get_bit(&ADC1->ISR, ADC_ISR_ADRDY_Pos) == 0) {
+    }
+
+    // Start ADC conversion sequence
+    set_bit(&ADC1->CR, 1, ADC_CR_ADSTART_Pos);
+
+    int channel_index = 0;
+    while (channel_index < channel_select_data_length) {
+        // Busy wait for End Of Conversion for current channel
+        while (get_bit(&ADC1->ISR, ADC_ISR_EOC_Pos) == 0) {
+        }
+        // Clear EOC flag
+        set_bit(&ADC1->ISR, 0, ADC_ISR_EOC_Pos);
+        channel_select_data[channel_index++] = ADC1->DR;
+    }
+
+    // Busy wait for End Of Sequence
+    while (get_bit(&ADC1->ISR, ADC_ISR_EOS_Pos) == 0) {
+    }
+    // Clear EOS flag
+    set_bit(&ADC1->ISR, 0, ADC_ISR_EOS_Pos);
+}
+
+void usart3_transmit_char(char character) {
+    // Busy wait while TX register is not empty
+    while (get_bit(&USART3->ISR, USART_ISR_TXE_Pos) == 0) {
+    }
+    // Write 'character' to Transmit Data Register
+    USART3->TDR = character;
+}
+
+void usart3_transmit_string(char string[]) {
+    uint32_t index = 0;
+    char character;
+    // Transmit char until 0 is reached
+    while ((character = string[index++]) != 0x0) {
+        usart3_transmit_char(character);
+    }
+}
+
+void usart3_transmit_newline(enum LineEnding lineEnding) {
+    switch (lineEnding) {
+        case CR:
+            usart3_transmit_char('\r');
+            break;
+        case LF:
+            usart3_transmit_char('\n');
+            break;
+        case CRLF:
+            usart3_transmit_char('\r');
+            usart3_transmit_char('\n');
+            break;
+    }
+}
+
+// (https://stackoverflow.com/a/23840699)
+// Used instead of sprintf for performance.
+char *to_string(int value, char *result, int base) {
     // Check that the base if valid
     if (base < 2 || base > 36) {
         *result = '\0';
