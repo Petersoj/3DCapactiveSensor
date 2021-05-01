@@ -159,6 +159,8 @@ void configure_and_setup_adc(uint8_t *channel_select_positions,
     set_bit(&ADC1->CFGR1, 0, ADC_CFGR1_CONT_Pos);
     // Disable hardware trigger
     set_bits(&ADC1->CFGR1, 0, ADC_CFGR1_EXTEN_Pos + 1, ADC_CFGR1_EXTEN_Pos);
+    // Enable Wait mode (delays until EOS flag is cleared)
+    set_bit(&ADC1->CFGR1, 1, ADC_CFGR1_WAIT_Pos);
 
     // Loop through and enable select channels
     int index;
@@ -234,6 +236,7 @@ void gpio_start_adc_sample_sequence(uint8_t *channel_select_data,
         }
         // Clear EOC flag
         set_bit(&ADC1->ISR, 0, ADC_ISR_EOC_Pos);
+        // Set data in array
         channel_select_data[channel_index++] = ADC1->DR;
     }
 
