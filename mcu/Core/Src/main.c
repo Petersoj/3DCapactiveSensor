@@ -37,6 +37,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+#define USART3_BAUD_RATE 115200
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -106,35 +108,17 @@ int main(void) {
     /* Initialize all configured peripherals */
     /* USER CODE BEGIN 2 */
 
-    // STM32 TX/USB-UART RX is on PC4
-    // STM32 RX/USB-UART TX is on PC5
+    // PINOUT:
+    // PA5 = X Plate
+    // PA7 = Y Plate
+    // PC5 = Z Plate
+    //
+    // PC4 = STM32 TX / USB-UART RX
+    // PC5 = STM32 RX / USB-UART TX
 
     // Enable GPIOC clock
+
     RCC->AHBENR |= (1 << 19u);
-    // Enable the USART clock
-    RCC->APB1ENR |= (1 << 18u);
-
-    // Configure PC4 for USART3 Alternate Function
-    GPIOC->MODER |= (1 << 9u);
-    GPIOC->MODER &= ~(1 << 8u);
-    // Configure PC5 for USART3 Alternate Function
-    GPIOC->MODER |= (1 << 11u);
-    GPIOC->MODER &= ~(1 << 10u);
-    // Configure PC4 Alternate Function (AF) Low Register for AF1
-    GPIOC->AFR[0] |= (1 << 16u);
-    // Configure PC5 Alternate Function (AF) Low Register for AF1
-    GPIOC->AFR[0] |= (1 << 20u);
-
-    // Set the baud rate of USART3
-    USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
-    // Enable USART3 TX
-    USART3->CR1 |= (1 << 3u);
-    // Enable USART3 RX
-    USART3->CR1 |= (1 << 2u);
-    // Enable USART3 Receive Register Not Empty Interrupt
-    USART3->CR1 |= (1 << 5u);
-    // Enable USART3
-    USART3->CR1 |= (1 << 0u);
 
     usart3_transmit_string("Testing...");
 
@@ -181,6 +165,57 @@ void SystemClock_Config(void) {
 }
 
 /* USER CODE BEGIN 4 */
+
+void configure_usart3() {
+    // Enable the USART3 RCC clock
+    set_bit(&RCC->APB1ENR, 1, RCC_APB1ENR_USART3EN_Pos);
+
+    // Configure PC4 for USART3 Alternate Function
+    set_bits(&GPIOC->MODER, 0x2, GPIO_MODER_MODER4_Pos + 1, GPIO_MODER_MODER4_Pos);
+    // Configure PC5 for USART3 Alternate Function
+    set_bits(&GPIOC->MODER, 0x2, GPIO_MODER_MODER5_Pos + 1, GPIO_MODER_MODER5_Pos);
+
+    // Configure PC4 Alternate Function (AF) Low Register for AF1
+    set_bits(&GPIOC->AFR[0], 0x1, GPIO_AFRL_AFSEL4_Pos + 3, GPIO_AFRL_AFSEL4_Pos);
+    // Configure PC5 Alternate Function (AF) Low Register for AF1
+    set_bits(&GPIOC->AFR[0], 0x1, GPIO_AFRL_AFSEL5_Pos + 3, GPIO_AFRL_AFSEL5_Pos);
+
+    // Set the baud rate of USART3
+    set_bits(&USART3->BRR, HAL_RCC_GetHCLKFreq() / USART3_BAUD_RATE, 15, 0);
+    // Enable USART3 TX
+    set_bit(&USART3->CR1, 1, USART_CR1_TE_Pos);
+    // Enable USART3
+    set_bit(&USART3->CR1, 1, USART_CR1_UE_Pos);
+}
+
+char *itoa(int value, char *result, int base) {
+    // Check that the base if valid
+    if (base < 2 || base > 36) {
+        *result = '\0';
+        return result;
+    }
+
+    char *ptr = result, *ptr1 = result, tmp_char;
+    int tmp_value;
+
+    do {
+        tmp_value = value;
+        value /= base;
+        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"
+            [35 + (tmp_value - value * base)];
+    } while (value);
+
+    // Apply negative sign
+    if (tmp_value < 0)
+        *ptr++ = '-';
+    *ptr-- = '\0';
+    while (ptr1 < ptr) {
+        tmp_char = *ptr;
+        *ptr-- = *ptr1;
+        *ptr1++ = tmp_char;
+    }
+    return result;
+}
 
 static inline void set_bits(volatile uint32_t *to_set, uint32_t number, uint8_t msb, uint8_t lsb) {
     uint32_t temp = *to_set;

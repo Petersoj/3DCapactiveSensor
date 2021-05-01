@@ -21,7 +21,7 @@ namespace Client3DCapacitiveSensor.Controller {
         private static readonly int MAX_Z_INPUT = 100;
         private static readonly int Z_MIN_OF_MOUSE_LEFT_BUTTON_DOWN = 0;
         private static readonly int Z_MAX_OF_MOUSE_LEFT_BUTTON_DOWN = 20;
-        private static readonly string SERIAL_INPUT_COORDINATE_DELIMITER = ",";
+        private static readonly string SERIAL_INPUT_COORDINATES_DELIMITER = ",";
 
         private ViewController viewController;
         private Thread viewControllerthread;
@@ -143,7 +143,7 @@ namespace Client3DCapacitiveSensor.Controller {
 
                 // Parse the data
                 int x, y, z;
-                string[] coordinateStrings = serialLine.Split(SERIAL_INPUT_COORDINATE_DELIMITER);
+                string[] coordinateStrings = serialLine.Split(SERIAL_INPUT_COORDINATES_DELIMITER);
                 try {
                     x = int.Parse(coordinateStrings[0]);
                     y = int.Parse(coordinateStrings[1]);

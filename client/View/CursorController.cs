@@ -59,7 +59,7 @@ namespace Client3DCapacitiveSensor.View {
         /// Simulates the user's left mouse button presseing up.
         /// </summary>
         public void LeftButtonUp() {
-            mouse_event((int)MouseEventFlags.LeftUp, GetX() + 100, GetY() + 100, 0, 0);
+            mouse_event((int)MouseEventFlags.LeftUp, GetX(), GetY(), 0, 0);
             leftButtonDown = false;
         }
 
