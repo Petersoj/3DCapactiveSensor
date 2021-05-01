@@ -204,42 +204,19 @@ F 3 "~" H 4550 5250 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	4000 4600 4250 4600
-Wire Wire Line
-	4250 4600 4250 5050
-Wire Wire Line
-	4250 4600 4350 4600
-Wire Wire Line
 	4350 4600 4350 5050
-Connection ~ 4250 4600
-Wire Wire Line
-	4500 4600 4450 4600
-Wire Wire Line
-	4450 4600 4450 5050
 Wire Wire Line
 	4500 4600 4550 4600
 Wire Wire Line
 	4550 4600 4550 5050
-Connection ~ 4500 4600
 Wire Wire Line
 	5000 4600 4750 4600
 Wire Wire Line
-	4650 4600 4650 5050
-Wire Wire Line
 	4750 5050 4750 4600
-Connection ~ 4750 4600
-Wire Wire Line
-	4750 4600 4650 4600
-Text Label 4250 5000 1    50   ~ 0
-Z_ADC
 Text Label 4350 5000 1    50   ~ 0
 Z_pin
-Text Label 4450 5000 1    50   ~ 0
-Y_ADC
 Text Label 4550 5000 1    50   ~ 0
 Y_pin
-Text Label 4650 5000 1    50   ~ 0
-X_ADC
 Text Label 4750 5000 1    50   ~ 0
 X_pin
 $Comp
@@ -297,4 +274,6 @@ F 3 "~" H 5850 3900 50  0001 C CNN
 	1    5850 3900
 	-1   0    0    1   
 $EndComp
+Wire Wire Line
+	4000 4600 4350 4600
 $EndSCHEMATC
