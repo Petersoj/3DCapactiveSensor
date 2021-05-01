@@ -96,14 +96,15 @@ int main(void) {
 
     configure_rcc();
     configure_usart3_tx();
-    uint8_t channels[5] = {6, 5, 4, 7, 8};
+    uint8_t channels[6] = {0, 6, 5, 4, 7, 8};
     configure_and_setup_adc(channels, sizeof(channels) / sizeof(uint8_t));
+    gpio_configure_adc_function(GPIOA, 0);
     gpio_configure_adc_function(GPIOA, 5);
     gpio_configure_adc_function(GPIOA, 6);
     gpio_configure_adc_function(GPIOA, 4);
     gpio_configure_adc_function(GPIOA, 7);
     gpio_configure_adc_function(GPIOA, 8);
-
+		
     /* USER CODE END 2 */
 
     /* Infinite loop */
@@ -112,7 +113,7 @@ int main(void) {
         /* USER CODE END WHILE */
 
         // Testing code for ADC sample sequence
-        uint16_t channel_data[5] = {0, 0};
+        uint16_t channel_data[6] = {0};
         gpio_start_adc_sample_sequence(channel_data, sizeof(channel_data) / sizeof(uint16_t));
         int index;
         for (index = 0; index < sizeof(channel_data) / sizeof(uint16_t); index++) {
