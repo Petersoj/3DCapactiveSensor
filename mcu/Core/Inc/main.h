@@ -75,17 +75,16 @@ void Error_Handler(void);
 void configure_rcc(void);
 
 /**
- * @brief Configures and sets up the ADC.
- * @param channel_select_positions: array of bytes specifying enabled ADC channels
- * @param channel_select_positions_length: length of channel_select_positions array
- */
-void configure_and_setup_adc(uint8_t *channel_select_positions,
-                             uint8_t channel_select_positions_length);
-
-/**
  * @brief Configures the USART3 peripheral for transmission.
  */
 void configure_usart3_tx(void);
+
+/**
+ * @brief Configures a GPIO pin.
+ * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
+ * @param gpio_number: the GPIO port number
+ */
+void configure_gpio(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 
 /**
  * @brief Pulls a GPIO pin low.
@@ -95,19 +94,18 @@ void configure_usart3_tx(void);
 void gpio_pull_low(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 
 /**
- * @brief Configures a GPIO pin to interally connect to its ADC channel.
+ * @brief Configures a GPIO pin as an input.
  * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
  * @param gpio_number: the GPIO port number
  */
-void gpio_configure_adc_function(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
+void gpio_configure_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 
 /**
- * @brief Starts an ADC conversion/sample sequence.
- * @param channel_select_data: an array to be filled by select channel data
- * @param channel_select_data_length: length of channel_select_data
+ * @brief Gets a GPIO pin input.
+ * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
+ * @param gpio_number: the GPIO port number
  */
-void gpio_start_adc_sample_sequence(uint16_t *channel_select_data,
-                                    uint8_t channel_select_data_length);
+uint8_t gpio_get_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 
 /**
  * @brief Transmits a character on the USART3 peripheral. This is a blocking call.
