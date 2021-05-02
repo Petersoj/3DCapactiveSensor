@@ -80,11 +80,35 @@ void configure_rcc(void);
 void configure_usart3_tx(void);
 
 /**
- * @brief Configures a GPIO pin.
+ * @brief Configures the a Timer peripheral
+ * @param timer_pointer: the timer struct pointer
+ * @param channels: array of channels of the timer
+ * @param channels_length: the length of channels array
+ */
+void configure_timer(TIM_TypeDef *timer_pointer, uint8_t *channels, uint8_t channels_length);
+
+/**
+ * @brief Sets a timer channel in capture mode
+ * @param timer_pointer: the timer struct pointer
+ * @param the desired channel to set in capture mode
+ */
+void timer_setup_capture_channel(TIM_TypeDef *timer_pointer, uint8_t channel);
+
+/**
+ * @brief Configures the GPIO pin.
  * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
  * @param gpio_number: the GPIO port number
  */
-void configure_gpio(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
+void configure_gpio_pin(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
+
+/**
+ * @brief Configures a GPIO pin as high impedance timer input.
+ * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
+ * @param gpio_number: the GPIO port number
+ * @param timer_alternate_function_number: the alternate function number of the timer
+ */
+void configure_gpio_timer_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number,
+                                uint8_t timer_alternate_function_number);
 
 /**
  * @brief Pulls a GPIO pin low.
@@ -94,18 +118,11 @@ void configure_gpio(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 void gpio_pull_low(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 
 /**
- * @brief Configures a GPIO pin as an input.
+ * @brief Configures a GPIO pin as a high impedance.
  * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
  * @param gpio_number: the GPIO port number
  */
-void gpio_configure_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
-
-/**
- * @brief Gets a GPIO pin input.
- * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
- * @param gpio_number: the GPIO port number
- */
-uint8_t gpio_get_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
+void gpio_configure_high_impedance(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 
 /**
  * @brief Transmits a character on the USART3 peripheral. This is a blocking call.
