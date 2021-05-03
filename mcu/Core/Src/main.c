@@ -87,25 +87,36 @@ int main(void) {
     /* USER CODE BEGIN 2 */
 
     // PINOUT:
-    // PC6 = PA1 (TIM2_CH2 as Alternate Function 2) (bridge via jumper wire) = X Plate
-    // PC7 = PA6 (TIM3_CH1 as Alternate Function 1) (bridge via jumper wire) = Y Plate
-    // PC8 = PA7 (TIM3_CH2 as Alternate Function 1) (bridge via jumper wire) = Z Plate
+    // PC0 = X Plate
+    // PC2 = Y Plate
+    // PA0 = Z Plate
     //
     // PC4 = STM32 TX / USB-UART RX
     // PC5 = STM32 RX / USB-UART TX
 
     configure_rcc();
     configure_usart3_tx();
-		configure_gpio_pin(GPIOC, 6);
-    configure_gpio_pin(GPIOC, 7);
-    configure_gpio_pin(GPIOC, 8);
-    configure_gpio_timer_input(GPIOA, 1, 2);
-    configure_gpio_timer_input(GPIOA, 6, 1);
-    configure_gpio_timer_input(GPIOA, 7, 1);
-    uint8_t tim2_channels[1] = {2};
-    configure_timer(TIM2, tim2_channels, sizeof(tim2_channels) / sizeof(uint8_t));
-    uint8_t tim3_channels[2] = {1, 2};
-    configure_timer(TIM3, tim3_channels, sizeof(tim3_channels) / sizeof(uint8_t));
+    configure_gpio(GPIOC, 0);
+    configure_gpio(GPIOC, 2);
+    configure_gpio(GPIOA, 0);
+
+    GPIOC->MODER |= (1 << 12);
+    GPIOC->MODER &= ~(1 << 13);
+    GPIOC->OTYPER &= ~(1 << 6);
+    GPIOC->OSPEEDR &= ~(1 << 12);
+    GPIOC->PUPDR &= ~((1 << 12) | (1 << 13));
+    GPIOC->BSRR = (1 << 6);
+
+    // General purpose output mode
+    set_bits(&GPIOC->MODER, 0x1, 1, 0);
+    // Push-pull output type
+    set_bit(&GPIOC->MODER, 0x0, 0);
+    // No pull-up, no pull-down resistors
+    set_bits(&GPIOC->PUPDR, 0x0, 1, 0);
+    // Output LOW
+    GPIOC->BSRR = (1 << 0);
+
+    configure_gpio(GPIOC, 6);
 
     /* USER CODE END 2 */
 
@@ -113,29 +124,22 @@ int main(void) {
     /* USER CODE BEGIN WHILE */
     while (1) {
         /* USER CODE END WHILE */
-			
-			 gpio_pull_low(GPIOC, 6);
-			gpio_configure_high_impedance(GPIOC, 6);
-			timer_setup_capture_channel(TIM2, 2);
-			HAL_Delay(500);
-			usart3_transmit_char(',');
-			
-        /*
-                int total = 0;
-                int count = 0;
-                while (total < 100) {
-                    gpio_pull_low(GPIOC, 6);
-                    gpio_configure_input(GPIOC, 6);
-                    while (gpio_get_input(GPIOC, 6) == 0) {
-                        count++;
-                    }
-                    total++;
-                }
 
-                char count_str[20];
-                to_string((count << 7) / total, count_str, 10);
-                usart3_transmit_string(count_str);
-                usart3_transmit_newline(CRLF);*/
+        int total = 0;
+        int count = 0;
+        while (total < 100) {
+            gpio_pull_low(GPIOC, 6);
+            gpio_configure_input(GPIOC, 6);
+            while (gpio_get_input(GPIOC, 6) == 0) {
+                count++;
+            }
+            total++;
+        }
+
+        char count_str[20];
+        to_string((count << 7) / total, count_str, 10);
+        usart3_transmit_string(count_str);
+        usart3_transmit_newline(CRLF);
 
         /* USER CODE BEGIN 3 */
     }
@@ -172,25 +176,6 @@ void SystemClock_Config(void) {
     }
 }
 
-/**
- * @brief Handler for Timer 2 interrupt request
- */
-void TIM2_IRQHandler() {
-    uint8_t count = TIM2->CCR1;
-    char string[10];
-    to_string(count, string, 10);
-    usart3_transmit_string(string);
-    usart3_transmit_newline(CRLF);
-	
-	  // Clear trigger interrupt flag
-	  set_bit(&TIM2->SR, 0x0, TIM_SR_TIF_Pos);
-}
-
-/**
- * @brief Handler for Timer 3 interrupt request
- */
-void TIM3_IRQHandler() {}
-
 /* USER CODE BEGIN 4 */
 
 void configure_rcc(void) {
@@ -200,8 +185,6 @@ void configure_rcc(void) {
     set_bit(&RCC->AHBENR, 1, RCC_AHBENR_GPIOCEN_Pos);
     // Enable the USART3 clock
     set_bit(&RCC->APB1ENR, 1, RCC_APB1ENR_USART3EN_Pos);
-    // Enable the TIM2 clock
-    set_bit(&RCC->APB1ENR, 1, RCC_APB1ENR_TIM2EN_Pos);
 }
 
 void configure_usart3_tx(void) {
@@ -218,78 +201,14 @@ void configure_usart3_tx(void) {
     // Set the baud rate of USART3
     set_bits(&USART3->BRR, HAL_RCC_GetHCLKFreq() / USART3_BAUD_RATE, 15, 0);
     // Enable USART3 TX
-    set_bit(&USART3->CR1, 0x1, USART_CR1_TE_Pos);
+    set_bit(&USART3->CR1, 1, USART_CR1_TE_Pos);
     // Enable USART3
-    set_bit(&USART3->CR1, 0x1, USART_CR1_UE_Pos);
+    set_bit(&USART3->CR1, 1, USART_CR1_UE_Pos);
 }
 
-void configure_timer(TIM_TypeDef *timer_pointer, uint8_t *channels, uint8_t channels_length) {
-    // Up counter
-    set_bit(&timer_pointer->CR1, 0x0, TIM_CR1_DIR_Pos);
-    // Enable one pulse mode (disables timer after update event)
-    set_bit(&timer_pointer->CR1, 0x1, TIM_CR1_OPM_Pos);
-    // Slave mode as reset mode
-    set_bits(&timer_pointer->SMCR, 0x4, TIM_SMCR_SMS_Pos + 2, TIM_SMCR_SMS_Pos);
-    // Set count to 0
-    timer_pointer->CNT = 0;
-
-    int index;
-    for (index = 0; index < channels_length; index++) {
-        // Enable Capture/Compare interrupt
-        set_bit(&timer_pointer->DIER, 0x1, channels[index]);
-
-        __IO uint32_t *ccmr_register;
-        if (channels[index] > 2) {
-            ccmr_register = &timer_pointer->CCMR1;
-        } else {
-            ccmr_register = &timer_pointer->CCMR2;
-        }
-        // Map IC (Input Capture) to TI (Trigger Input)
-        set_bits(ccmr_register, 0x1, channels[index] * 8 + 1, channels[index] * 8);
-
-        // Set polarity as noninverted/rising edge
-        set_bit(&timer_pointer->CCER, 0x0, channels[index] * 4 + 1); // CCxP
-        set_bit(&timer_pointer->CCER, 0x0, channels[index] * 4 + 3); // CCxNP
-
-        // Enable Capture/Compare
-        set_bit(&timer_pointer->CCER, 0x1, channels[index] * 4);
-    }
-}
-
-void timer_setup_capture_channel(TIM_TypeDef *timer_pointer, uint8_t channel) {
-    // Disable timer
-    set_bit(&timer_pointer->CR1, 0x0, TIM_CR1_CEN_Pos);
-    // Disable slave
-    set_bits(&timer_pointer->SMCR, 0x0, TIM_SMCR_SMS_Pos + 2, TIM_SMCR_SMS_Pos);
-    // Set trigger select channel
-    set_bits(&timer_pointer->SMCR, channel == 1 ? 0x5 : 0x6, TIM_SMCR_TS_Pos + 2, TIM_SMCR_TS_Pos);
-    // Slave mode as reset mode
-    set_bits(&timer_pointer->SMCR, 0x4, TIM_SMCR_SMS_Pos + 2, TIM_SMCR_SMS_Pos);
-    // Enable timer
-    set_bit(&timer_pointer->CR1, 0x1, TIM_CR1_CEN_Pos);
-}
-
-void configure_gpio_pin(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
+void configure_gpio(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
     // High output speed
-    set_bits(&gpio_pointer->OSPEEDR, 0x3, gpio_number * 2 + 1, gpio_number * 2);
-    // No pull-up, no pull-down resistors
-    set_bits(&gpio_pointer->PUPDR, 0x0, gpio_number * 2 + 1, gpio_number * 2);
-}
-
-void configure_gpio_timer_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number,
-                                uint8_t timer_alternate_function_number) {
-    // Alternate function mode
-    set_bits(&gpio_pointer->MODER, 0x2, gpio_number * 2 + 1, gpio_number * 2);
-    // Set alternate function
-    __IO uint32_t *alternate_function_register;
-    if (gpio_number <= 7) {
-        alternate_function_register = &gpio_pointer->AFR[0];
-    } else {
-        gpio_number -= 8; // To account for different high register bit indexes
-        alternate_function_register = &gpio_pointer->AFR[1];
-    }
-    set_bits(alternate_function_register, timer_alternate_function_number, gpio_number * 4 + 3,
-             gpio_number * 4);
+    set_bits(&gpio_pointer->OSPEEDR, 0x3, gpio_number * 2 + 1, gpio_number * 2); // 0x3 = 0b11
 }
 
 void gpio_pull_low(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
@@ -297,15 +216,22 @@ void gpio_pull_low(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
     set_bits(&gpio_pointer->MODER, 0x1, gpio_number * 2 + 1, gpio_number * 2);
     // Push-pull output type
     set_bit(&gpio_pointer->MODER, 0x0, gpio_number);
+    // No pull-up, no pull-down resistors
+    set_bits(&gpio_pointer->PUPDR, 0x0, gpio_number * 2 + 1, gpio_number * 2);
     // Output LOW
     set_bit(&gpio_pointer->BSRR, 0x1, gpio_number + 16);
 }
 
-void gpio_configure_high_impedance(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
+void gpio_configure_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
     // Input mode
     set_bits(&gpio_pointer->MODER, 0x0, gpio_number * 2 + 1, gpio_number * 2);
     // No pull-up, no pull-down resistors
     set_bits(&gpio_pointer->PUPDR, 0x0, gpio_number * 2 + 1, gpio_number * 2);
+}
+
+uint8_t gpio_get_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
+    // Get value from input data register
+    return get_bit(&gpio_pointer->IDR, gpio_number);
 }
 
 void usart3_transmit_char(char character) {
