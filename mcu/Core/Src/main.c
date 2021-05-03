@@ -45,6 +45,11 @@
 
 /* USER CODE BEGIN PV */
 
+char set_min_bool = 1;
+char calibration_done = 0;
+uint32_t plate_capacitance_min_counts[3] = {0};
+uint32_t plate_capacitance_max_counts[3] = {0};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -87,36 +92,28 @@ int main(void) {
     /* USER CODE BEGIN 2 */
 
     // PINOUT:
-    // PC0 = X Plate
-    // PC2 = Y Plate
-    // PA0 = Z Plate
+    // PC6 = X Plate
+    // PC7 = Y Plate
+    // PC8 = Z Plate
     //
     // PC4 = STM32 TX / USB-UART RX
     // PC5 = STM32 RX / USB-UART TX
 
     configure_rcc();
     configure_usart3_tx();
-    configure_gpio(GPIOC, 0);
-    configure_gpio(GPIOC, 2);
-    configure_gpio(GPIOA, 0);
-
-    GPIOC->MODER |= (1 << 12);
-    GPIOC->MODER &= ~(1 << 13);
-    GPIOC->OTYPER &= ~(1 << 6);
-    GPIOC->OSPEEDR &= ~(1 << 12);
-    GPIOC->PUPDR &= ~((1 << 12) | (1 << 13));
-    GPIOC->BSRR = (1 << 6);
-
-    // General purpose output mode
-    set_bits(&GPIOC->MODER, 0x1, 1, 0);
-    // Push-pull output type
-    set_bit(&GPIOC->MODER, 0x0, 0);
-    // No pull-up, no pull-down resistors
-    set_bits(&GPIOC->PUPDR, 0x0, 1, 0);
-    // Output LOW
-    GPIOC->BSRR = (1 << 0);
-
     configure_gpio(GPIOC, 6);
+    configure_gpio(GPIOC, 7);
+    configure_gpio(GPIOC, 8);
+
+    // Configure PA0 (User Button) as input
+    // set_bits(&GPIOA->MODER, 0x0, GPIO_MODER_MODER0_Pos + 1, GPIO_MODER_MODER0_Pos);
+    // set_bits(&GPIOA->PUPDR, 0x2, GPIO_PUPDR_PUPDR0_Pos + 1, GPIO_PUPDR_PUPDR0_Pos);
+    RCC->AHBENR |= RCC_AHBENR_GPIOAEN; // Enable peripheral clock to GPIOA
+    GPIOA->MODER &= ~(GPIO_MODER_MODER0_0 | GPIO_MODER_MODER0_1);           // Set PA0 to input
+    GPIOC->OSPEEDR &= ~(GPIO_OSPEEDR_OSPEEDR0_0 | GPIO_OSPEEDR_OSPEEDR0_1); // Set to low speed
+    GPIOC->PUPDR |= GPIO_PUPDR_PUPDR0_1;                                    // Set to pull-down
+
+    uint8_t button_debouncer = 0;
 
     /* USER CODE END 2 */
 
@@ -125,21 +122,91 @@ int main(void) {
     while (1) {
         /* USER CODE END WHILE */
 
-        int total = 0;
-        int count = 0;
-        while (total < 100) {
-            gpio_pull_low(GPIOC, 6);
-            gpio_configure_input(GPIOC, 6);
-            while (gpio_get_input(GPIOC, 6) == 0) {
-                count++;
+        uint32_t x_capacitance = poll_capacitance(GPIOC, 6);
+        uint32_t y_capacitance = poll_capacitance(GPIOC, 7);
+        uint32_t z_capacitance = poll_capacitance(GPIOC, 8);
+
+        uint8_t user_button = GPIOA->IDR & (1 << 0);
+        if (user_button) {
+            button_debouncer = 1;
+        }
+        if (button_debouncer == 1 && user_button == 0) {
+            button_debouncer = 0;
+            if (set_min_bool) {
+                plate_capacitance_min_counts[0] = x_capacitance;
+                plate_capacitance_min_counts[1] = y_capacitance;
+                plate_capacitance_min_counts[2] = z_capacitance;
+                set_min_bool = 0;
+            } else {
+                plate_capacitance_max_counts[0] = x_capacitance;
+                plate_capacitance_max_counts[1] = y_capacitance;
+                plate_capacitance_max_counts[2] = z_capacitance;
+
+                char buffer[20];
+                // Transmit formatted min and max to client
+                usart3_transmit_string("min,");
+                to_string(plate_capacitance_min_counts[0], buffer, 10);
+                usart3_transmit_string(buffer);
+                usart3_transmit_char(',');
+                to_string(plate_capacitance_min_counts[1], buffer, 10);
+                usart3_transmit_string(buffer);
+                usart3_transmit_char(',');
+                to_string(plate_capacitance_min_counts[2], buffer, 10);
+                usart3_transmit_string(buffer);
+                usart3_transmit_newline(CRLF);
+
+                usart3_transmit_string("max,");
+                to_string(plate_capacitance_max_counts[0], buffer, 10);
+                usart3_transmit_string(buffer);
+                usart3_transmit_char(',');
+                to_string(plate_capacitance_max_counts[1], buffer, 10);
+                usart3_transmit_string(buffer);
+                usart3_transmit_char(',');
+                to_string(plate_capacitance_max_counts[2], buffer, 10);
+                usart3_transmit_string(buffer);
+                usart3_transmit_newline(CRLF);
+
+                set_min_bool = 1;
+                calibration_done = 1;
             }
-            total++;
         }
 
-        char count_str[20];
-        to_string((count << 7) / total, count_str, 10);
-        usart3_transmit_string(count_str);
-        usart3_transmit_newline(CRLF);
+        if (calibration_done) {
+            char buffer[20];
+            to_string(x_capacitance, buffer, 10);
+            usart3_transmit_string(buffer);
+            usart3_transmit_string(",");
+            to_string(y_capacitance, buffer, 10);
+            usart3_transmit_string(buffer);
+            usart3_transmit_string(",");
+            to_string(z_capacitance, buffer, 10);
+            usart3_transmit_string(buffer);
+            usart3_transmit_newline(CRLF);
+        }
+
+        /*
+
+                                        usart3_transmit_newline(CRLF);
+char string[20];
+to_string(plate_capacitance_min_counts[0], string, 10);
+usart3_transmit_string(string);
+usart3_transmit_char(',');
+to_string(plate_capacitance_min_counts[1], string, 10);
+usart3_transmit_string(string);
+usart3_transmit_char(',');
+to_string(plate_capacitance_min_counts[2], string, 10);
+usart3_transmit_string(string);
+
+usart3_transmit_newline(CRLF);
+
+to_string(plate_capacitance_max_counts[0], string, 10);
+usart3_transmit_string(string);
+usart3_transmit_char(',');
+to_string(plate_capacitance_max_counts[1], string, 10);
+usart3_transmit_string(string);
+usart3_transmit_char(',');
+to_string(plate_capacitance_max_counts[2], string, 10);
+usart3_transmit_string(string);*/
 
         /* USER CODE BEGIN 3 */
     }
@@ -232,6 +299,22 @@ void gpio_configure_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
 uint8_t gpio_get_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
     // Get value from input data register
     return get_bit(&gpio_pointer->IDR, gpio_number);
+}
+
+uint32_t poll_capacitance(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
+    int total = 0, count = 0;
+    // This while loop is to average several low 'count' samples
+    // to get a more accurate reading.
+    while (total < 500) {
+        gpio_pull_low(gpio_pointer, gpio_number);        // Discharges plate capacitor
+        gpio_configure_input(gpio_pointer, gpio_number); // Sets GPIO as high impedance
+        // Loop until GPIO pin positive edge (plate capacitor charging)
+        while (gpio_get_input(gpio_pointer, gpio_number) == 0) {
+            count++;
+        }
+        total++;
+    }
+    return (count << 12) / total;
 }
 
 void usart3_transmit_char(char character) {

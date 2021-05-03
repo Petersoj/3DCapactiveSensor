@@ -108,6 +108,13 @@ void gpio_configure_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 uint8_t gpio_get_input(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
 
 /**
+ * @brief Polls the measured capacitance of the given GPIO pin.
+ * @param gpio_pointer: a pointer to the GPIO_TypeDef struct base
+ * @param gpio_number: the GPIO port number
+ */
+uint32_t poll_capacitance(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number);
+
+/**
  * @brief Transmits a character on the USART3 peripheral. This is a blocking call.
  * @param character: the character
  */

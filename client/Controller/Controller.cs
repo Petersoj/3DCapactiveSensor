@@ -29,6 +29,7 @@ namespace Client3DCapacitiveSensor.Controller {
         private SerialInterface serialInterface;
         private Thread serialInterfaceThread;
         private bool serialInterfaceStopFlag;
+        private int xMin, yMin, zMin, xMax, yMax, zMax;
 
         /// <summary>
         /// Instantiates a new <see cref="Controller"/>.
@@ -40,6 +41,7 @@ namespace Client3DCapacitiveSensor.Controller {
             });
             cursorController = new CursorController(MAX_X_INPUT, MAX_Y_INPUT);
             serialInterfaceStopFlag = false;
+            xMin = yMin = zMin = xMax = yMax = zMax = -1;
         }
 
         /// <summary>
@@ -141,48 +143,85 @@ namespace Client3DCapacitiveSensor.Controller {
                     return;
                 }
 
-                // Parse the data
-                int x, y, z;
+                System.Diagnostics.Debug.WriteLine(serialLine);
+
                 string[] coordinateStrings = serialLine.Split(SERIAL_INPUT_COORDINATES_DELIMITER);
-                try {
-                    x = int.Parse(coordinateStrings[0]);
-                    y = int.Parse(coordinateStrings[1]);
-                    z = int.Parse(coordinateStrings[2]);
-                } catch (Exception exception) {
-                    System.Diagnostics.Debug.WriteLine("Invalid input: " + serialLine + "\n" + exception.Message);
-                    continue;
-                }
-
-                // Confirm positive coordinates
-                if (x < 0 || y < 0 || z < 0) {
-                    System.Diagnostics.Debug.WriteLine("Coordinates cannot be negative: " + coordinateStrings);
-                    continue;
-                }
-
-                // Clamp coordinates just in case
-                if (x > MAX_X_INPUT) {
-                    x = MAX_X_INPUT;
-                }
-                if (y > MAX_Y_INPUT) {
-                    y = MAX_Y_INPUT;
-                }
-                if (z > MAX_Z_INPUT) {
-                    z = MAX_Z_INPUT;
-                }
-
-                // Check if z coordinate should change mouse left button state
-                if (z >= Z_MIN_OF_MOUSE_LEFT_BUTTON_DOWN && z <= Z_MAX_OF_MOUSE_LEFT_BUTTON_DOWN) {
-                    if (!cursorController.IsLeftButtonDown()) {
-                        cursorController.LeftButtonDown();
+                if (serialLine.Contains("min")) {
+                    // Parse the minimum data
+                    try {
+                        xMin = int.Parse(coordinateStrings[1]);
+                        yMin = int.Parse(coordinateStrings[2]);
+                        zMin = int.Parse(coordinateStrings[3]);
+                    } catch (Exception exception) {
+                        System.Diagnostics.Debug.WriteLine("Invalid input: " + serialLine + "\n" + exception.Message);
+                        continue;
+                    }
+                } else if (serialLine.Contains("max")) {
+                    // Parse the maximum data
+                    try {
+                        xMax = int.Parse(coordinateStrings[1]);
+                        yMax = int.Parse(coordinateStrings[2]);
+                        zMax = int.Parse(coordinateStrings[3]);
+                    } catch (Exception exception) {
+                        System.Diagnostics.Debug.WriteLine("Invalid input: " + serialLine + "\n" + exception.Message);
+                        continue;
                     }
                 } else {
-                    if (cursorController.IsLeftButtonDown()) {
-                        cursorController.LeftButtonUp();
+                    if (xMin == -1 || yMin == -1 || zMin == -1 ||
+                        xMax == -1 || yMax == -1 || zMax == -1) {
+                        System.Diagnostics.Debug.WriteLine("Minimums and Maximums not received!");
+                        continue;
                     }
-                }
 
-                // Update cursor coordinates
-                cursorController.SetXY(x, y);
+                    int x, y, z;
+                    // Parse the data
+                    try {
+                        x = int.Parse(coordinateStrings[0]);
+                        y = int.Parse(coordinateStrings[1]);
+                        z = int.Parse(coordinateStrings[2]);
+                    } catch (Exception exception) {
+                        System.Diagnostics.Debug.WriteLine("Invalid input: " + serialLine + "\n" + exception.Message);
+                        continue;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine(((double)(x - xMin) / (xMax - xMin)));
+
+                    // Noramlize coordinates
+                    x = (int)(((double)(x - xMin) / (xMax - xMin)) * (double)MAX_X_INPUT);
+                    y = (int)(((double)(y - yMin) / (yMax - yMin)) * (double)MAX_Y_INPUT);
+                    z = (int)(((double)(z - zMin) / (zMax - zMin)) * (double)MAX_Z_INPUT);
+
+                    // Clamp coordinates
+                    if (x < 0) {
+                        x = 0;
+                    } else if (x > MAX_X_INPUT) {
+                        x = MAX_X_INPUT;
+                    }
+                    if (y < 0) {
+                        y = 0;
+                    } else if (y > MAX_Y_INPUT) {
+                        y = MAX_Y_INPUT;
+                    }
+                    if (z < 0) {
+                        z = 0;
+                    } else if (z > MAX_Z_INPUT) {
+                        z = MAX_Z_INPUT;
+                    }
+
+                    // Check if z coordinate should change mouse left button state
+                    if (z >= Z_MIN_OF_MOUSE_LEFT_BUTTON_DOWN && z <= Z_MAX_OF_MOUSE_LEFT_BUTTON_DOWN) {
+                        if (!cursorController.IsLeftButtonDown()) {
+                            //cursorController.LeftButtonDown();
+                        }
+                    } else {
+                        if (cursorController.IsLeftButtonDown()) {
+                            //cursorController.LeftButtonUp();
+                        }
+                    }
+
+                    // Update cursor coordinates
+                    cursorController.SetXY(y, x);
+                }
             }
         }
 
