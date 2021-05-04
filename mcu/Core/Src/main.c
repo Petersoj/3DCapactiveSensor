@@ -23,6 +23,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#define MOTOR_DRIVER
+
+#ifdef MOTOR_DRIVER
+#include "motor.h"
+#endif
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -38,6 +44,7 @@
 /* USER CODE BEGIN PM */
 
 #define USART3_BAUD_RATE 115200
+#define MOTOR_DRIVER_MAX_RPM 10
 
 /* USER CODE END PM */
 
@@ -98,9 +105,17 @@ int main(void) {
     //
     // PC4 = STM32 TX / USB-UART RX
     // PC5 = STM32 RX / USB-UART TX
+    //
+    // Motor Driver Pinout:
+    // ENCB = PB5
+    // ENCA = PB4
+    // IN2 = PA6
+    // IN1 = PA5
+    // ENABLE = PA4
 
     configure_rcc();
     configure_usart3_tx();
+    motor_init();
     configure_gpio(GPIOC, 6);
     configure_gpio(GPIOC, 7);
     configure_gpio(GPIOC, 8);
@@ -173,6 +188,7 @@ int main(void) {
         }
 
         if (calibration_done) {
+            // Transmit capacitance data
             char buffer[20];
             to_string(x_capacitance, buffer, 10);
             usart3_transmit_string(buffer);
@@ -183,30 +199,13 @@ int main(void) {
             to_string(z_capacitance, buffer, 10);
             usart3_transmit_string(buffer);
             usart3_transmit_newline(CRLF);
+
+#ifdef MOTOR_DRIVER
+            // Update motor target RPM (use X plate)
+            target_rpm = (x_capacitance - plate_capacitance_min_counts[0]) * MOTOR_DRIVER_MAX_RPM /
+                         (plate_capacitance_max_counts[0] - plate_capacitance_min_counts[0]);
+#endif
         }
-        /*
-
-                usart3_transmit_newline(CRLF);
-char string[20];
-to_string(plate_capacitance_min_counts[0], string, 10);
-usart3_transmit_string(string);
-usart3_transmit_char(',');
-to_string(plate_capacitance_min_counts[1], string, 10);
-usart3_transmit_string(string);
-usart3_transmit_char(',');
-to_string(plate_capacitance_min_counts[2], string, 10);
-usart3_transmit_string(string);
-
-usart3_transmit_newline(CRLF);
-
-to_string(plate_capacitance_max_counts[0], string, 10);
-usart3_transmit_string(string);
-usart3_transmit_char(',');
-to_string(plate_capacitance_max_counts[1], string, 10);
-usart3_transmit_string(string);
-usart3_transmit_char(',');
-to_string(plate_capacitance_max_counts[2], string, 10);
-usart3_transmit_string(string);*/
     }
     /* USER CODE END 3 */
 }
@@ -249,6 +248,8 @@ void SystemClock_Config(void) {
 void configure_rcc(void) {
     // Enable GPIOA clock
     set_bit(&RCC->AHBENR, 1, RCC_AHBENR_GPIOAEN_Pos);
+    // Enable GPIOB clock
+    set_bit(&RCC->AHBENR, 1, RCC_AHBENR_GPIOBEN_Pos);
     // Enable GPIOC clock
     set_bit(&RCC->AHBENR, 1, RCC_AHBENR_GPIOCEN_Pos);
     // Enable the USART3 clock
