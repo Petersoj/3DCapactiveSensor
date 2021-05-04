@@ -122,6 +122,7 @@ int main(void) {
     while (1) {
         /* USER CODE END WHILE */
 
+        /* USER CODE BEGIN 3 */
         uint32_t x_capacitance = poll_capacitance(GPIOC, 6);
         uint32_t y_capacitance = poll_capacitance(GPIOC, 7);
         uint32_t z_capacitance = poll_capacitance(GPIOC, 8);
@@ -183,10 +184,9 @@ int main(void) {
             usart3_transmit_string(buffer);
             usart3_transmit_newline(CRLF);
         }
-
         /*
 
-                                        usart3_transmit_newline(CRLF);
+                usart3_transmit_newline(CRLF);
 char string[20];
 to_string(plate_capacitance_min_counts[0], string, 10);
 usart3_transmit_string(string);
@@ -207,8 +207,6 @@ usart3_transmit_string(string);
 usart3_transmit_char(',');
 to_string(plate_capacitance_max_counts[2], string, 10);
 usart3_transmit_string(string);*/
-
-        /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */
 }
@@ -227,18 +225,21 @@ void SystemClock_Config(void) {
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
     RCC_OscInitStruct.HSIState = RCC_HSI_ON;
     RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
+    RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV1;
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
         Error_Handler();
     }
     /** Initializes the CPU, AHB and APB buses clocks
      */
     RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1;
-    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) {
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK) {
         Error_Handler();
     }
 }
@@ -305,7 +306,7 @@ uint32_t poll_capacitance(GPIO_TypeDef *gpio_pointer, uint8_t gpio_number) {
     int total = 0, count = 0;
     // This while loop is to average several low 'count' samples
     // to get a more accurate reading.
-    while (total < 500) {
+    while (total < 1000) {
         gpio_pull_low(gpio_pointer, gpio_number);        // Discharges plate capacitor
         gpio_configure_input(gpio_pointer, gpio_number); // Sets GPIO as high impedance
         // Loop until GPIO pin positive edge (plate capacitor charging)
